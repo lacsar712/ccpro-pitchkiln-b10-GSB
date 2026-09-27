@@ -72,7 +72,8 @@
 
   <section class="drawer-block">
     <h3>切换相位</h3>
-    <p class="hint">进入「出胶」须当前值守至少一条探针 ≤95℃。</p>
+    <p class="elig-flag {% if drawing_hint.eligible %}ok{% else %}no{% endif %}">出胶资格：{% if drawing_hint.eligible %}具备{% else %}不具备{% endif %} — {{ drawing_hint.reason }}</p>
+    <p class="hint">进入「出胶」须当前值守至少一条探针 ≤95℃。资格 ≠ 相位：达标后相位仍停在原位，须在此手动切换。</p>
     <form method="post" action="{% url 'change_phase' hearth.pk %}"
           class="stack-form"
           hx-post="{% url 'change_phase' hearth.pk %}"

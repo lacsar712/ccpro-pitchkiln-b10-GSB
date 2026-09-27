@@ -21,6 +21,8 @@
         {% if open %}
         <span class="tile-temp mono">目标 {{ open.targetSoftPointC }}℃</span>
         <span class="tile-lot">{{ open.resinLot.lotCode }}</span>
+        <span class="tile-elig {% if h.drawing_hint.eligible %}ok{% else %}no{% endif %}"
+              title="{{ h.drawing_hint.reason }}">出胶资格 · {% if h.drawing_hint.eligible %}具备{% else %}未达标{% endif %}</span>
         {% else %}
         <span class="tile-temp mono muted">无开灶</span>
         {% endif %}

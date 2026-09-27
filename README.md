@@ -55,7 +55,13 @@ python manage.py runserver 0.0.0.0:4710
 3. **CookRun（熬制值守）**：归属灶台与来脂批、`openedAt`、`closedAt`（可空）、`targetSoftPointC`
 4. **SoftPointProbe（软化点探针）**：归属值守、`sampledAt`、`softPointC`、`samplerName`
 
-**业务规则**：将灶台相位切到 `drawing`（出胶）时，进行中的 CookRun 必须至少有一条 SoftPointProbe 的 `softPointC ≤ 95`。逻辑在 `apps/kiln/services/floor_rules.py`，由相位切换入口调用。
+**业务规则**：出胶「资格」与灶台「相位」是两回事，不要混用。
+
+- **资格（提示）**：进行中值守至少一条 SoftPointProbe 的 `softPointC ≤ 95` → 具备出胶资格；读数缺失或全部高于 95 → 不具备。判定只有一套，在 `apps/kiln/services/floor_rules.py` 的 `drawing_eligibility()`；瓦片与抽屉上的资格提示、以及「改相位」入口的校验都读它。探针写入成功后，抽屉立即重渲染、瓦片经 `floor-refresh` 事件同步刷新，提示马上更新。
+- **相位（状态）**：只能经「改相位」入口（`change_hearth_phase`）显式切换。写入合格探针后资格变为「具备」，但相位停在原位，系统不会静默跳到出胶。
+- **图例计数**：看板顶部图例的「出胶」只数相位已是 `drawing` 的灶；仅资格达标、未改相位的不计入。
+
+种子数据里的「坳火-甲」就是例子：保温相位、已有 ≤95℃ 探针（具备出胶资格），但相位仍是保温，等值守手动切换。
 
 ## 界面
 
@@ -68,7 +74,7 @@ python manage.py runserver 0.0.0.0:4710
 python manage.py seed_data
 ```
 
-幂等：已有灶台则只保证账号存在。样例地名仅用「松脂坳 / 桐油坑」系。
+幂等：已有灶台则只保证账号存在。样例地名仅用「松脂坳 / 桐油坑」系。其中「坳火-甲」为保温灶：已有 ≤95℃ 探针、具备出胶资格，但相位停在保温，用来演示资格 ≠ 相位。
 
 ## 目录结构
 

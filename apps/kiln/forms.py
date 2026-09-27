@@ -1,4 +1,5 @@
 from django import forms
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from .models import CookRun, FireHearth, ResinLot, SoftPointProbe
@@ -47,7 +48,12 @@ class PhaseChangeForm(forms.Form):
     def clean_phase(self):
         phase = self.cleaned_data["phase"]
         if self.hearth is not None and phase == FireHearth.PHASE_DRAWING:
-            assert_can_enter_drawing(self.hearth)
+            try:
+                assert_can_enter_drawing(self.hearth)
+            except ValidationError as exc:
+                # 服务层抛的是按字段分组的字典型错误；字段级 clean 只能
+                # 抛普通消息，否则 add_error 会 TypeError 成 500。
+                raise forms.ValidationError(exc.messages)
         return phase
 
 

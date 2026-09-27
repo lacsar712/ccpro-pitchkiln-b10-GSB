@@ -44,6 +44,8 @@ def ensure_seed_data():
         lane=1,
         tag="坳火-甲",
         resinGrade="特级脂",
+        # 保温灶：已有 ≤95℃ 探针（具备出胶资格），但相位仍停保温，
+        # 专门用来演示「资格 ≠ 相位」——达标不会静默跳到出胶。
         phase=FireHearth.PHASE_HOLDING,
     )
     h2 = FireHearth.objects.create(
@@ -88,6 +90,12 @@ def ensure_seed_data():
         run=run1,
         sampledAt=now - timezone.timedelta(hours=1),
         softPointC=Decimal("96.20"),
+        samplerName="值守周磊",
+    )
+    SoftPointProbe.objects.create(
+        run=run1,
+        sampledAt=now - timezone.timedelta(minutes=20),
+        softPointC=Decimal("94.60"),
         samplerName="值守周磊",
     )
 

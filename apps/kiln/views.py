@@ -10,7 +10,7 @@ from django.views.decorators.http import require_http_methods, require_POST
 
 from .forms import OpenCookRunForm, PhaseChangeForm, ResinLotForm, SoftPointProbeForm
 from .models import CookRun, FireHearth, ResinLot
-from .services.floor_rules import change_hearth_phase
+from .services.floor_rules import change_hearth_phase, drawing_eligibility
 
 
 def _wants_htmx(request):
@@ -31,9 +31,16 @@ def _hearths_for_board():
 
 def _board_context():
     hearths = list(_hearths_for_board())
+    for h in hearths:
+        # 资格提示与改相位入口共用 drawing_eligibility；直接用预取的
+        # 进行中值守，避免每灶再多查一次。
+        open_run = h.open_runs_cache[0] if h.open_runs_cache else None
+        h.drawing_hint = drawing_eligibility(h, open_run)
     lanes = {}
     for h in hearths:
         lanes.setdefault(h.lane, []).append(h)
+    # 图例只按「当前相位」计数：出胶格只数相位已是 drawing 的灶，
+    # 仅资格达标但未改相位的不计入。
     phase_legend = [
         (key, label, sum(1 for h in hearths if h.phase == key))
         for key, label in FireHearth.PHASE_CHOICES
@@ -54,6 +61,7 @@ def _drawer_context(hearth):
         "hearth": hearth,
         "open_run": open_run,
         "probes": probes,
+        "drawing_hint": drawing_eligibility(hearth, open_run),
         "phase_form": PhaseChangeForm(hearth=hearth),
         "probe_form": SoftPointProbeForm() if open_run else None,
         "open_run_form": OpenCookRunForm(hearth=hearth) if open_run is None else None,
@@ -131,6 +139,8 @@ def add_probe(request, pk):
         probe = form.save(commit=False)
         probe.run = open_run
         probe.save()
+        # 探针写入只刷新资格提示（下方抽屉重渲染 + floor-refresh 刷瓦片），
+        # 相位停在原位；禁止在此静默跳到出胶。
         messages.success(request, f"已登记探针 {probe.softPointC}℃")
     else:
         messages.error(request, "探针登记失败，请检查输入")
