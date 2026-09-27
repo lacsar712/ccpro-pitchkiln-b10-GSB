@@ -55,7 +55,13 @@ python manage.py runserver 0.0.0.0:4710
 3. **CookRun（熬制值守）**：归属灶台与来脂批、`openedAt`、`closedAt`（可空）、`targetSoftPointC`
 4. **SoftPointProbe（软化点探针）**：归属值守、`sampledAt`、`softPointC`、`samplerName`
 
-**业务规则**：将灶台相位切到 `drawing`（出胶）时，进行中的 CookRun 必须至少有一条 SoftPointProbe 的 `softPointC ≤ 95`。逻辑在 `apps/kiln/services/floor_rules.py`，由相位切换入口调用。
+**业务规则**：出胶**资格**与灶台**相位**是两回事，务必区分——
+
+- **出胶资格（只读提示）**：进行中的 CookRun 至少有一条 `softPointC ≤ 95` 的 SoftPointProbe 即「资格·是」；读数缺失或全部高于 95℃ 为「资格·否」。判定逻辑只有一份：`apps/kiln/services/floor_rules.py` 的 `drawing_eligibility`，瓦片与抽屉的提示、以及「改相位」入口的校验都读它。探针写入成功后，瓦片与抽屉经 HTMX 局部刷新**立即**更新资格提示，但**绝不静默改动相位**。
+- **相位（手动状态）**：只能经抽屉里「改相位」入口切换；切到 `drawing` 时由同一套判定（`assert_can_enter_drawing` → `drawing_eligibility`）把关，资格不足会被拒绝。写入合法探针后相位仍停在原位（如保温），须人工确认再改相位。
+- **图例计数**：看板图例的「出胶」计数只统计相位已是 `drawing` 的灶；仅资格达标、未改相位的不计入。
+
+种子数据中的 `坳火-甲`（保温，探针 102.4℃ / 96.2℃）用于演示这一区分：初始资格·否；写入 ≤95℃ 探针后资格翻为「是」，相位仍是保温，图例出胶计数不变。
 
 ## 界面
 

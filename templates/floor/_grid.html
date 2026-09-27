@@ -24,6 +24,7 @@
         {% else %}
         <span class="tile-temp mono muted">无开灶</span>
         {% endif %}
+        <span class="tile-elig {% if h.drawing_ok %}ok{% else %}no{% endif %}">出胶资格 · {% if h.drawing_ok %}是{% else %}否{% endif %}</span>
       </button>
       {% endwith %}
       {% endfor %}

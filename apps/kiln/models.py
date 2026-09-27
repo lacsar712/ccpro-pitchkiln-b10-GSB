@@ -49,6 +49,10 @@ class FireHearth(models.Model):
         return f"L{self.lane}-{self.tag}"
 
     def open_run(self):
+        # 看板预取（open_runs_cache，含 probes）时直接读缓存，避免每瓦片 N+1
+        cached = getattr(self, "open_runs_cache", None)
+        if cached is not None:
+            return cached[0] if cached else None
         return (
             self.runs.filter(closedAt__isnull=True)
             .select_related("resinLot")

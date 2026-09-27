@@ -10,7 +10,7 @@ from django.views.decorators.http import require_http_methods, require_POST
 
 from .forms import OpenCookRunForm, PhaseChangeForm, ResinLotForm, SoftPointProbeForm
 from .models import CookRun, FireHearth, ResinLot
-from .services.floor_rules import change_hearth_phase
+from .services.floor_rules import change_hearth_phase, drawing_eligibility
 
 
 def _wants_htmx(request):
@@ -31,9 +31,14 @@ def _hearths_for_board():
 
 def _board_context():
     hearths = list(_hearths_for_board())
+    for h in hearths:
+        # 出胶资格提示：与改相位入口共用同一套判定，仅展示、不改相位
+        h.drawing_ok = drawing_eligibility(h)
     lanes = {}
     for h in hearths:
         lanes.setdefault(h.lane, []).append(h)
+    # 图例只按相位统计：「出胶」计数仅含相位已是出胶的灶，
+    # 资格达标但未手动改相位的不计入
     phase_legend = [
         (key, label, sum(1 for h in hearths if h.phase == key))
         for key, label in FireHearth.PHASE_CHOICES
@@ -54,6 +59,8 @@ def _drawer_context(hearth):
         "hearth": hearth,
         "open_run": open_run,
         "probes": probes,
+        # 与改相位入口同一套判定（floor_rules.drawing_eligibility）
+        "drawing_ok": drawing_eligibility(hearth),
         "phase_form": PhaseChangeForm(hearth=hearth),
         "probe_form": SoftPointProbeForm() if open_run else None,
         "open_run_form": OpenCookRunForm(hearth=hearth) if open_run is None else None,
@@ -131,6 +138,8 @@ def add_probe(request, pk):
         probe = form.save(commit=False)
         probe.run = open_run
         probe.save()
+        # 注意：写入合法读数只刷新「出胶资格」提示，绝不在此改动相位；
+        # 相位只能经 change_phase 入口手动切换
         messages.success(request, f"已登记探针 {probe.softPointC}℃")
     else:
         messages.error(request, "探针登记失败，请检查输入")

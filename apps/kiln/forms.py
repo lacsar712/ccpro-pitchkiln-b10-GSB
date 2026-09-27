@@ -47,7 +47,12 @@ class PhaseChangeForm(forms.Form):
     def clean_phase(self):
         phase = self.cleaned_data["phase"]
         if self.hearth is not None and phase == FireHearth.PHASE_DRAWING:
-            assert_can_enter_drawing(self.hearth)
+            try:
+                assert_can_enter_drawing(self.hearth)
+            except forms.ValidationError as exc:
+                # 服务层抛的是 dict 型 ValidationError，直接再抛会让
+                # add_error 炸 TypeError；拍平成消息列表挂到 phase 字段
+                raise forms.ValidationError(exc.messages) from exc
         return phase
 
 

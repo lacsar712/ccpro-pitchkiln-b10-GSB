@@ -383,6 +383,31 @@ body {
 .tile-temp { font-size: 0.85rem; margin-top: 0.25rem; }
 .tile-lot { font-size: 0.68rem; color: var(--steel); word-break: break-all; }
 
+/* 出胶资格提示：与改相位入口同一套判定，仅展示 */
+.tile-elig {
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  margin-top: 0.15rem;
+}
+
+.tile-elig.ok { color: var(--ok); }
+.tile-elig.no { color: var(--steel); opacity: 0.8; }
+
+.elig-hint {
+  margin: 0 0 0.55rem;
+  font-size: 0.75rem;
+  padding: 0.4rem 0.55rem;
+  border-left: 3px solid #57534e;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--steel);
+}
+
+.elig-hint.ok {
+  border-left-color: var(--ok);
+  color: var(--ok);
+  background: rgba(34, 197, 94, 0.08);
+}
+
 .board-empty { color: var(--steel); }
 
 /* —— right drawer —— */
